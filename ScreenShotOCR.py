@@ -10,20 +10,20 @@ from collections import Counter
 tesseract_path = "C:\Program Files\Tesseract-OCR\\tesseract.exe"
 pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
-def on_key_event(e):   
+def on_key_event(e): #Waits for shift + ctrl combination to start OCR process
     if e.event_type == keyboard.KEY_DOWN:
         if keyboard.is_pressed('shift') and keyboard.is_pressed("ctrl"):
             screenshot = ImageGrab.grabclipboard()
             if screenshot:
                 bgColor =  detect_background_color(screenshot)
-                print(bgColor)
-                processImage(screenshot,bgColor)
-                print("Screenshot captured from clipboard!")
+                img = processImage(screenshot,bgColor)
+                extractText(img)
+                print("Screenshot captured from clipboard and processed!")
                 time.sleep(1)
             else:
                 print("No image found in clipboard.")
                 
-def detect_background_color(image):
+def detect_background_color(image): #Detects background color of the image and returns that information to be used in preprocessing
     img = np.array(image)
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_gray_flattened = img_gray.flatten()
@@ -31,7 +31,7 @@ def detect_background_color(image):
     most_common_color = color_counts.most_common(1)[0][0]
     return most_common_color
 
-def processImage(image, bgColor):
+def processImage(image, bgColor): #Applies preprocessing techniques to the image to improve prediction accuracy
     img = np.array(image)
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     if bgColor >= 128:
@@ -44,13 +44,18 @@ def processImage(image, bgColor):
     kernel = np.ones((2,2),np.uint8)
     img_erode = cv2.erode(img_bw, kernel, iterations=1)
     
-    ocr_result = pytesseract.image_to_string(img_erode)
-    ocr_result = ocr_result.replace("\n\n", "\n")
-    pyperclip.copy(ocr_result)
+    return img_erode
     
+def extractText(img): #Extracts text from image, automatically saves it into the clipboard and returns it
+    ocr_result = pytesseract.image_to_string(img)
+    ocr_result = ocr_result.replace("\n\n", "\n")
+    ocr_result = ocr_result.replace("“", "\"").replace("”","\"") #Common error when extracting code syntax from screenshot
+    pyperclip.copy(ocr_result)
+    return ocr_result
 
 def main():
-    print("Press Shift + Ctrl to load image from clipboard")
+    print("Press Shift + Ctrl to load image from clipboard.\n"+
+          "You can keep the program running in the background, it'll terminate when you press esc")
     keyboard.hook(on_key_event)
     try:
         keyboard.wait('esc')
