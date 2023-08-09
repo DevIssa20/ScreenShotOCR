@@ -13,7 +13,6 @@ pytesseract.pytesseract.tesseract_cmd = tesseract_path
 def on_key_event(e):   
     if e.event_type == keyboard.KEY_DOWN:
         if keyboard.is_pressed('shift') and keyboard.is_pressed("ctrl"):
-            print("I am here")
             screenshot = ImageGrab.grabclipboard()
             if screenshot:
                 bgColor =  detect_background_color(screenshot)
